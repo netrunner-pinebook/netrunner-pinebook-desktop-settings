@@ -1,0 +1,18 @@
+#!/bin/sh
+#Bodge as the pine DRM driver does not support suspend/resume
+#d_ed wrote power management support in there, but it does not work..yet
+#need to reset the driver and then restore the original mode
+#but we lose that after reset...best to just let userspace do it
+
+case $1 in
+  pre)
+    echo "we are suspending at $(date)..." > /tmp/systemd_suspend_test
+    sudo -u `loginctl -p Name show-session c1 | cut -d '=' -f 2 ` DISPLAY=:0 xset dpms force off
+    ;;
+  post)
+    echo "...and we are back from $(date)" >> /tmp/systemd_suspend_test
+    sudo -u `loginctl -p Name show-session c1 | cut -d '=' -f 2 ` DISPLAY=:0 xset dpms force off
+    sudo -u `loginctl -p Name show-session c1 | cut -d '=' -f 2 ` DISPLAY=:0 xset dpms force on
+    ;;
+esac
+
