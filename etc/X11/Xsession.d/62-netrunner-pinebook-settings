@@ -6,4 +6,6 @@ export XDG_CONFIG_DIRS=/usr/share/netrunner-pinebook-settings/plasma5-profile/:$
 if [ -z "$XDG_DATA_DIRS" ]; then
   XDG_DATA_DIRS=/usr/share:/usr/local/share
 fi
+
 export XDG_DATA_DIRS=/usr/share/netrunner-pinebook-settings/plasma5-profile:$XDG_DATA_DIRS 
+export KWIN_COMPOSE=X
