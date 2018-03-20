@@ -9,3 +9,4 @@ fi
 
 export XDG_DATA_DIRS=/usr/share/netrunner-pinebook-settings/plasma5-profile:$XDG_DATA_DIRS 
 export KWIN_COMPOSE=X
+export VDPAU_DRIVER=sunxi
