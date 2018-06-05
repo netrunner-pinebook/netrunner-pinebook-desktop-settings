@@ -4,15 +4,46 @@
 #need to reset the driver and then restore the original mode
 #but we lose that after reset...best to just let userspace do it
 
+# Find the "most active" user session. Only sessions with a seat
+# count, so if a PB only has ssh'ed in users this will fall over.
+active_session=""
+# .. all sessions with a seat, ordered in reverse of seat-number
+#    This assumes that later-numbered seats are more likely to be active.
+for s in $( loginctl list-sessions --no-legend | awk '($4 ~ "seat"){ print substr($4, 5), $1; }' | LC_ALL=C sort -n -r | cut -d ' ' -f 2 ) ; do
+  if test yes = $( loginctl show-session -p Active --value "$s" ) ; then
+    active_session="$s"
+    break
+  fi
+done
+
+# If there's an active session, get a user from it
+active_user=""
+if test -n "$active_session" ; then
+  active_user=$( loginctl show-session -p Name --value "$active_session" )
+fi
+
+LOGFILE=/tmp/systemd_suspend_test
+
+if test pre = "$1" ; then
+  : > "$LOGFILE"  # Empty it out
+fi
+
+if test -z "$active_user" ; then
+  echo "No active user session found, ignoring screen." >> "$LOGFILE"
+  loginctl list-sessions >> "$LOGFILE"
+  exit 1
+fi
+  
+echo "Screen action $1 at $(LC_ALL=C date)" >> "$LOGFILE"
+echo " .. session $active_session user $active_user" >> "$LOGFILE"
+
 case $1 in
   pre)
-    echo "we are suspending at $(date)..." > /tmp/systemd_suspend_test
-    sudo -u `loginctl -p Name show-session c1 | cut -d '=' -f 2 ` DISPLAY=:0 xset dpms force off
+    sudo -u "$active_user" DISPLAY=:0 xset dpms force off >> "$LOGFILE" 2>&1
     ;;
   post)
-    echo "...and we are back from $(date)" >> /tmp/systemd_suspend_test
-    sudo -u `loginctl -p Name show-session c1 | cut -d '=' -f 2 ` DISPLAY=:0 xset dpms force off
-    sudo -u `loginctl -p Name show-session c1 | cut -d '=' -f 2 ` DISPLAY=:0 xset dpms force on
+    sudo -u "$active_user" DISPLAY=:0 xset dpms force off >> "$LOGFILE" 2>&1
+    sudo -u "$active_user" DISPLAY=:0 xset dpms force on >> "$LOGFILE" 2>&1
     ;;
 esac
 
